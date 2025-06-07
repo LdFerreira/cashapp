@@ -1,65 +1,67 @@
-import {
-  HttpException,
-  HttpStatus,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import { Users } from './users.entity';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { Users } from './entities/users.entity';
 import { CreateUserDTO } from './dto/create.user.dto';
 import { UpdateUserDto } from './dto/update.user.dto';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { plainToInstance } from 'class-transformer';
+import { UserDTO } from './dto/list.user.dto';
 
 @Injectable()
 export class UsersService {
-  private users: Users[] = [
-    {
-      id: 1,
-      name: 'John Doe',
-      birthdate: '1990-01-01',
-      role: ['user'],
-    },
-    {
-      id: 2,
-      name: 'Jane Smith',
-      birthdate: '1992-05-15',
-      role: ['admin'],
-    },
-  ];
+  constructor(
+    @InjectRepository(Users)
+    private readonly usersRepository: Repository<Users>,
+  ) {}
 
-  findAll(): Users[] {
-    return this.users;
+  async findAll() {
+    const users = await this.usersRepository.find({
+      relations: ['role'],
+    });
+    console.log(`users`, users);
+    return plainToInstance(UserDTO, users, {
+      excludeExtraneousValues: true,
+    });
   }
 
-  findOne(id: number): Users {
-    const user = this.users.find((user) => user.id === id);
+  async findOne(id: string) {
+    const user = await this.usersRepository.findOne({
+      where: { id },
+      relations: ['role'],
+    });
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
     }
-    return user;
+    return plainToInstance(UserDTO, user, {
+      excludeExtraneousValues: true,
+    });
   }
 
-  create(createUserDTO: CreateUserDTO): Users {
-    const newUser: Users = {
-      ...createUserDTO,
-      id: Math.max(...this.users.map((u) => u.id)) + 1,
-    };
-    this.users.push(newUser);
-    return newUser;
+  async create(createUserDTO: CreateUserDTO) {
+    const user = this.usersRepository.create(createUserDTO);
+    return this.usersRepository.save(user);
   }
 
-  update(id: number, updateUserDTO: UpdateUserDto): Users {
-    const userIndex = this.users.findIndex((user) => user.id === id);
-    if (userIndex === -1) {
-      throw new Error('User not found');
+  async update(id: string, updateUserDTO: UpdateUserDto) {
+    //Procura e monta o objeto
+    const users = await this.usersRepository.preload({
+      ...updateUserDTO,
+      id,
+    });
+    if (!users) {
+      throw new NotFoundException(`User with id ${id} not found`);
     }
-    this.users[userIndex] = { ...this.users[userIndex], ...updateUserDTO };
-    return this.users[userIndex];
+    return this.usersRepository.save(users);
   }
 
-  remove(id: number): void {
-    const userIndex = this.users.findIndex((user) => user.id === id);
-    if (userIndex === -1) {
-      throw new Error('User not found');
+  async remove(id: string) {
+    const user = await this.usersRepository.findOne({
+      where: { id },
+    });
+
+    if (!user) {
+      throw new NotFoundException(`User with id ${id} not found`);
     }
-    this.users.splice(userIndex, 1);
+    return this.usersRepository.remove(user);
   }
 }

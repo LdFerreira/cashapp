@@ -1,4 +1,5 @@
 import { IsString } from 'class-validator';
+import { Roles } from '../../roles/entities/roles.entity';
 
 export class CreateUserDTO {
   @IsString()
@@ -6,5 +7,5 @@ export class CreateUserDTO {
   @IsString()
   readonly birthdate: string;
   @IsString({ each: true })
-  readonly role: string[];
+  readonly role: Roles;
 }

@@ -10,7 +10,6 @@ import {
 import { UsersService } from './users.service';
 import { CreateUserDTO } from './dto/create.user.dto';
 import { UpdateUserDto } from './dto/update.user.dto';
-import { Users } from './users.entity';
 
 @Controller('users')
 export class UsersController {
@@ -21,22 +20,22 @@ export class UsersController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: number) {
+  findOne(@Param('id') id: string) {
     return this.usersService.findOne(id);
   }
 
   @Post()
-  create(@Body() createUserDTO: CreateUserDTO): Users {
+  create(@Body() createUserDTO: CreateUserDTO) {
     return this.usersService.create(createUserDTO);
   }
 
   @Patch(':id')
-  update(@Param('id') id: number, @Body() updateUserDTO: UpdateUserDto) {
+  update(@Param('id') id: string, @Body() updateUserDTO: UpdateUserDto) {
     return this.usersService.update(id, updateUserDTO);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: number) {
+  remove(@Param('id') id: string) {
     return this.usersService.remove(id);
   }
 }
