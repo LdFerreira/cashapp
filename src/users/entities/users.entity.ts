@@ -1,11 +1,12 @@
 import {
-  Column, CreateDateColumn,
+  Column,
+  CreateDateColumn,
   Entity,
   JoinColumn,
-  JoinTable,
-  ManyToMany,
+  ManyToOne,
   OneToOne,
-  PrimaryGeneratedColumn, UpdateDateColumn,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Roles } from '../../roles/entities/roles.entity';
 import { Accounts } from '../../accounts/entities/accounts.entity';
@@ -21,9 +22,10 @@ export class Users {
   @Column()
   birthdate: string;
 
-  @OneToOne(() => Roles)
+  @ManyToOne(() => Roles, (role) => role.users)
   @JoinColumn()
-  role?: Roles;
+  role: Roles;
+
   @OneToOne(() => Accounts, (account) => account.user)
   account: Accounts;
   @Column({ default: true })

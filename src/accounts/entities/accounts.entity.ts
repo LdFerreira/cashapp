@@ -22,7 +22,7 @@ export class Accounts {
   user: Users;
 
   @Column('decimal', { precision: 10, scale: 2, default: 0.0 })
-  balance: number;
+  balance: string;
 
   @Column('boolean', { default: true, nullable: false })
   active: boolean;
