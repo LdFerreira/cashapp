@@ -8,24 +8,27 @@ import { v4 as uuidv4 } from 'uuid';
 import { WithdrawDto } from './dto/withdraw.account.dto';
 import { DepositDto } from './dto/deposit.account.dto';
 import { TransferDto } from './dto/transfer.account.dto';
+import { Transaction } from './entities/transactions.entity';
+import { TransactionType } from './entities/transactions.enum';
+import { StatementFilterDto } from './entities/statement.account.dto';
+import { addHours, endOfDay, subHours } from 'date-fns';
+
 @Injectable()
 export class AccountsService {
+  private static readonly ACCOUNT_CODE_LENGTH = 6;
+  private static readonly DECIMAL_PLACES = 2;
+
   constructor(
     @InjectRepository(Accounts)
     private readonly accountsRepository: Repository<Accounts>,
+    @InjectRepository(Transaction)
+    private readonly transactionsRepository: Repository<Transaction>,
   ) {}
+
   async create(createAccountsDto: CreateAccountsDto) {
-    const code = uuidv4().slice(0, 6);
+    const code = uuidv4().slice(0, AccountsService.ACCOUNT_CODE_LENGTH);
+    await this.validateUniqueAccountCode(code);
 
-    const existAccountCode = await this.accountsRepository.findOne({
-      where: { code },
-    });
-
-    if (existAccountCode) {
-      throw new NotFoundException(
-        `Account with code ${code} already exists, try again`,
-      );
-    }
     const account = this.accountsRepository.create({
       user: createAccountsDto.userId,
       active: createAccountsDto.active,
@@ -34,13 +37,22 @@ export class AccountsService {
     return this.accountsRepository.save(account);
   }
 
+  private async validateUniqueAccountCode(code: string): Promise<void> {
+    const existingAccount = await this.accountsRepository.findOne({
+      where: { code },
+    });
+    if (existingAccount) {
+      throw new NotFoundException(
+        `Account with code ${code} already exists, try again`,
+      );
+    }
+  }
+
   async findAll() {
-    const accounts = await this.accountsRepository.find({
+    return this.accountsRepository.find({
       where: { active: true },
       relations: ['user'],
     });
-
-    return accounts;
   }
 
   async findOne(code: string) {
@@ -48,7 +60,6 @@ export class AccountsService {
       where: { code },
       relations: ['user'],
     });
-
     if (!account) {
       throw new NotFoundException(`Account with code ${code} not found`);
     }
@@ -68,22 +79,42 @@ export class AccountsService {
 
   async deposit(code: string, depositDto: DepositDto) {
     const account = await this.findOne(code);
-    const currentBalance = parseFloat(account.balance);
-    const depositAmount = depositDto.value;
+    const originalBalance = account.balance;
 
-    account.balance = (currentBalance + depositAmount).toFixed(2);
+    const { newBalance, updatedAccount } = await this.processBalanceUpdate(
+      account,
+      depositDto.value,
+      'add',
+    );
+    await this.createTransactionRecord({
+      type: TransactionType.DEPOSIT,
+      amount: depositDto.value,
+      beforeBalance: parseFloat(originalBalance),
+      afterBalance: parseFloat(newBalance),
+      account: updatedAccount,
+    });
 
-    return await this.accountsRepository.save(account);
+    return { amount: updatedAccount.balance };
   }
 
   async withdraw(code: string, withdrawDto: WithdrawDto) {
     const account = await this.findOne(code);
-    const currentBalance = parseFloat(account.balance);
-    const depositAmount = withdrawDto.value;
+    const originalBalance = account.balance;
+    const { newBalance, updatedAccount } = await this.processBalanceUpdate(
+      account,
+      withdrawDto.value,
+      'subtract',
+    );
 
-    account.balance = (currentBalance - depositAmount).toFixed(2);
+    await this.createTransactionRecord({
+      type: TransactionType.WITHDRAW,
+      amount: withdrawDto.value,
+      beforeBalance: parseFloat(originalBalance),
+      afterBalance: parseFloat(newBalance),
+      account: updatedAccount,
+    });
 
-    return await this.accountsRepository.save(account);
+    return { amount: updatedAccount.balance };
   }
 
   async transfer(
@@ -95,18 +126,145 @@ export class AccountsService {
       this.findOne(fromAccountId),
       this.findOne(toAccountId),
     ]);
-    const senderCurrentBalance = parseFloat(fromAccount.balance);
-    const senderAmount = transferDto.value;
 
-    if (senderCurrentBalance < senderAmount) {
-      throw new NotFoundException(`Insufficient funds`);
+    const senderBalance = parseFloat(fromAccount.balance);
+    if (senderBalance < transferDto.value) {
+      throw new NotFoundException('Insufficient funds');
     }
-    fromAccount.balance = (senderCurrentBalance - senderAmount).toFixed(2);
-    await this.accountsRepository.save(fromAccount);
 
-    const receiverCurrentBalance = parseFloat(toAccount.balance);
-    toAccount.balance = (receiverCurrentBalance + senderAmount).toFixed(2);
-    await this.accountsRepository.save(toAccount);
-    return fromAccount;
+    const { updatedAccount: updatedSender } = await this.processBalanceUpdate(
+      fromAccount,
+      transferDto.value,
+      'subtract',
+    );
+    const { updatedAccount: updatedReceiver } = await this.processBalanceUpdate(
+      toAccount,
+      transferDto.value,
+      'add',
+    );
+    await this.createTransferTransactions(
+      updatedSender,
+      updatedReceiver,
+      transferDto.value,
+    );
+
+    return { amount: updatedSender.balance };
+  }
+
+  private async processBalanceUpdate(
+    accountToChange: Accounts,
+    amount: number,
+    operation: 'add' | 'subtract',
+  ) {
+    const currentBalance = parseFloat(accountToChange.balance);
+    const newBalance =
+      operation === 'add'
+        ? (currentBalance + amount).toFixed(AccountsService.DECIMAL_PLACES)
+        : (currentBalance - amount).toFixed(AccountsService.DECIMAL_PLACES);
+
+    accountToChange.balance = newBalance;
+    const updatedAccount = await this.accountsRepository.save(accountToChange);
+    return { newBalance, updatedAccount };
+  }
+
+  private async createTransactionRecord(params: {
+    type: TransactionType;
+    amount: number;
+    beforeBalance: number;
+    afterBalance: number;
+    account: Accounts;
+    fromAccountId?: string;
+    toAccountId?: string;
+  }) {
+    const transaction = this.transactionsRepository.create({
+      type: params.type,
+      amount: params.amount,
+      before_balance: params.beforeBalance,
+      after_balance: params.afterBalance,
+      account_id: params.account.id,
+      account: params.account,
+      from_account_id: params.fromAccountId,
+      to_account_id: params.toAccountId,
+    });
+    return this.transactionsRepository.save(transaction);
+  }
+
+  private async createTransferTransactions(
+    sender: Accounts,
+    receiver: Accounts,
+    amount: number,
+  ) {
+    const currentSenderBalance = parseFloat(sender.balance);
+    const currentReceiverBalance = parseFloat(receiver.balance);
+    const beforeSenderBalance = currentSenderBalance + amount;
+    const beforeReceiverBalance = currentReceiverBalance - amount;
+    await Promise.all([
+      this.createTransactionRecord({
+        type: TransactionType.TRANSFER,
+        amount,
+        beforeBalance: beforeSenderBalance,
+        afterBalance: parseFloat(sender.balance),
+        account: sender,
+        fromAccountId: sender.id,
+        toAccountId: receiver.id,
+      }),
+      this.createTransactionRecord({
+        type: TransactionType.TRANSFER,
+        amount,
+        beforeBalance: beforeReceiverBalance,
+        afterBalance: parseFloat(receiver.balance),
+        account: receiver,
+        fromAccountId: sender.id,
+        toAccountId: receiver.id,
+      }),
+    ]);
+  }
+
+  async getAccountStatement(code: string, filters: StatementFilterDto) {
+    const account = await this.accountsRepository.findOneBy({ code: code });
+    if (!account) {
+      throw new NotFoundException(`Account with code ${code} not found`);
+    }
+    const query = this.transactionsRepository
+      .createQueryBuilder('transaction')
+      .where('transaction.account_id = :accountId', { accountId: account.id });
+    if (filters.type) {
+      query.andWhere('transaction.type = :type', { type: filters.type });
+    }
+
+    if (filters.startDate) {
+      const startDate = endOfDay(new Date(filters.startDate));
+      query.andWhere('transaction.createdAt >= :startDate', {
+        startDate: startDate,
+      });
+    }
+
+    if (filters.endDate) {
+      const endDate = addHours(new Date(filters.endDate), 24);
+      query.andWhere('transaction.createdAt <= :endDate', {
+        endDate: endDate.toISOString(),
+      });
+    }
+
+    // Ordena por data decrescente
+    const transactions = await query
+      .orderBy('transaction.createdAt', 'DESC')
+      .getMany();
+
+
+    return {
+      accountId: account.id,
+      currentBalance: account.balance,
+      filteredCount: transactions.length,
+      transactions: transactions.map((tx) => ({
+        id: tx.id,
+        type: tx.type,
+        amount: tx.amount,
+        before_balance: tx.before_balance,
+        after_balance: tx.after_balance,
+        date: subHours(tx.createdAt, 3),
+        to_account_id: tx.to_account_id ?? null,
+      })),
+    };
   }
 }

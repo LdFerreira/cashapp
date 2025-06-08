@@ -3,11 +3,13 @@ import {
   CreateDateColumn,
   Entity,
   JoinColumn,
+  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
 import { Users } from '../../users/entities/users.entity';
+import { Transaction } from './transactions.entity';
 
 @Entity('accounts')
 export class Accounts {
@@ -26,6 +28,9 @@ export class Accounts {
 
   @Column('boolean', { default: true, nullable: false })
   active: boolean;
+
+  @OneToMany(() => Transaction, (transaction) => transaction.account)
+  transactions: Transaction[];
 
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;

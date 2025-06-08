@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Body, Param, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Query } from '@nestjs/common';
 import { AccountsService } from './accounts.service';
 import { CreateAccountsDto } from './dto/create.accounts.dto';
 import { UpdateAccountsDto } from './dto/update.accounts.dto';
 import { WithdrawDto } from './dto/withdraw.account.dto';
 import { DepositDto } from './dto/deposit.account.dto';
 import { TransferDto } from './dto/transfer.account.dto';
+import { StatementFilterDto } from './entities/statement.account.dto';
 
 @Controller('accounts')
 export class AccountsController {
@@ -50,5 +51,12 @@ export class AccountsController {
     @Body() transferDto: TransferDto,
   ) {
     return this.accountService.transfer(fromCode, toCode, transferDto);
+  }
+  @Get('statement/:code')
+  getStatement(
+    @Param('code') code: string,
+    @Query() filters: StatementFilterDto,
+  ) {
+    return this.accountService.getAccountStatement(code, filters);
   }
 }

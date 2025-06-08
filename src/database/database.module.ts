@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Users } from '../users/entities/users.entity';
 import { Roles } from '../roles/entities/roles.entity';
 import { Accounts } from '../accounts/entities/accounts.entity';
+import { Transaction } from '../accounts/entities/transactions.entity';
 export const dataSourceOptions: DataSourceOptions = {
   type: 'postgres',
   host: 'localhost',
@@ -11,7 +12,7 @@ export const dataSourceOptions: DataSourceOptions = {
   username: 'postgres',
   password: 'docker',
   database: 'cashapp',
-  entities: [Users, Roles, Accounts],
+  entities: [Users, Roles, Accounts, Transaction],
   synchronize: true, //Sincronizar com entidades
 };
 @Module({
