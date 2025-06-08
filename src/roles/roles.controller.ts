@@ -2,9 +2,10 @@ import { RolesService } from './roles.service';
 import {
   Body,
   Controller,
-  Delete,
   ForbiddenException,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Patch,
   Post,
@@ -41,15 +42,7 @@ export class RolesController {
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
-  create(
-    @Body() createRoleDTO: CreateRoleDTO,
-    @CurrentUser() user: JwtPayload,
-  ) {
-    if (!user?.role?.name || user.role.name !== 'admin') {
-      throw new ForbiddenException(
-        'You not have permission to access this route',
-      );
-    }
+  create(@Body() createRoleDTO: CreateRoleDTO) {
     return this.rolesService.create(createRoleDTO);
   }
 
@@ -60,10 +53,20 @@ export class RolesController {
     return this.rolesService.update(id, updateRoleDTO);
   }
 
-  @Delete(':id')
+  @Patch(':id/:userId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
-  remove(@Param('id') id: string) {
-    return this.rolesService.remove(id);
+  @HttpCode(HttpStatus.OK)
+  setRole(
+    @Param('id') id: string,
+    @Param('userId') userId: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    if (user.id === userId) {
+      throw new ForbiddenException(
+        'You not have permission to change your own role',
+      );
+    }
+    return this.rolesService.changeRole(id, userId);
   }
 }

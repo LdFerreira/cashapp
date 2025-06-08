@@ -4,12 +4,15 @@ import { Repository } from 'typeorm';
 import { Roles } from './entities/roles.entity';
 import { CreateRoleDTO } from './dto/create.role.dto';
 import { UpdateRoleDTO } from './dto/update.role.dto';
+import { Users } from '../users/entities/users.entity';
 
 @Injectable()
 export class RolesService {
   constructor(
     @InjectRepository(Roles)
     private readonly rolesRepository: Repository<Roles>,
+    @InjectRepository(Users)
+    private readonly usersRepository: Repository<Users>,
   ) {}
 
   async findAll() {
@@ -47,14 +50,17 @@ export class RolesService {
     return this.rolesRepository.save(roles);
   }
 
-  async remove(id: string) {
-    const role = await this.rolesRepository.findOne({
-      where: { id },
-    });
-
-    if (!role) {
+  async changeRole(id: string, userId: string) {
+    const roles = await this.rolesRepository.findOne({ where: { id } });
+    if (!roles) {
       throw new NotFoundException(`Role with id ${id} not found`);
     }
-    return this.rolesRepository.remove(role);
+    const user = await this.usersRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException(`User with id ${userId} not found`);
+    }
+    user.role = roles;
+
+    return await this.usersRepository.save(user);
   }
 }

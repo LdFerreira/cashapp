@@ -62,7 +62,7 @@ export class AuthService {
     const { id } = payload;
     const user = await this.usersRepository.findOne({
       where: { id },
-      relations: ['role'],
+      relations: ['role', 'account'],
     });
 
     if (!user) {

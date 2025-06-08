@@ -1,11 +1,15 @@
-import { IsString } from 'class-validator';
-import { Roles } from '../../roles/entities/roles.entity';
+import { IsOptional, IsString } from 'class-validator';
 
 export class CreateUserDTO {
   @IsString()
+  @IsOptional()
   readonly name: string;
+
   @IsString()
+  @IsOptional()
   readonly birthdate: string;
-  @IsString({ each: true })
-  readonly role: Roles;
+
+  @IsString()
+  @IsOptional()
+  readonly email: string;
 }

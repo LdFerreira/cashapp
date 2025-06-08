@@ -27,14 +27,12 @@ export class UsersService {
   async findOne(id: string) {
     const user = await this.usersRepository.findOne({
       where: { id },
-      relations: ['role'],
+      relations: ['role', 'account'],
     });
     if (!user) {
       throw new NotFoundException(`User with id ${id} not found`);
     }
-    return plainToInstance(UserDTO, user, {
-      excludeExtraneousValues: true,
-    });
+    return user;
   }
 
   async create(createUserDTO: CreateUserDTO) {
@@ -43,7 +41,6 @@ export class UsersService {
   }
 
   async update(id: string, updateUserDTO: UpdateUserDto) {
-    //Procura e monta o objeto
     const users = await this.usersRepository.preload({
       ...updateUserDTO,
       id,
@@ -54,14 +51,14 @@ export class UsersService {
     return this.usersRepository.save(users);
   }
 
-  async remove(id: string) {
-    const user = await this.usersRepository.findOne({
-      where: { id },
-    });
-
-    if (!user) {
-      throw new NotFoundException(`User with id ${id} not found`);
-    }
-    return this.usersRepository.remove(user);
-  }
+  // async remove(id: string) {
+  //   const user = await this.usersRepository.findOne({
+  //     where: { id },
+  //   });
+  //
+  //   if (!user) {
+  //     throw new NotFoundException(`User with id ${id} not found`);
+  //   }
+  //   return this.usersRepository.remove(user);
+  // }
 }

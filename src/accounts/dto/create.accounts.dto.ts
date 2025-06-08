@@ -1,10 +1,9 @@
 import { IsBoolean, IsOptional, IsString } from 'class-validator';
-import { Users } from '../../users/entities/users.entity';
 
 export class CreateAccountsDto {
   @IsString()
-  readonly userId: Users;
-  
+  readonly userId: string;
+
   @IsBoolean()
   @IsOptional()
   readonly active?: boolean;

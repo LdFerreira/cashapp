@@ -1,6 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateAccountsDto } from './dto/create.accounts.dto';
-import { UpdateAccountsDto } from './dto/update.accounts.dto';
 import { Accounts } from './entities/accounts.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -28,9 +27,16 @@ export class AccountsService {
   async create(createAccountsDto: CreateAccountsDto) {
     const code = uuidv4().slice(0, AccountsService.ACCOUNT_CODE_LENGTH);
     await this.validateUniqueAccountCode(code);
-
+    const alreadyExistsAccount = await this.accountsRepository.findOne({
+      where: { user: { id: createAccountsDto.userId } },
+    });
+    if (alreadyExistsAccount) {
+      throw new NotFoundException(
+        `User with id ${createAccountsDto.userId} already has an account`,
+      );
+    }
     const account = this.accountsRepository.create({
-      user: createAccountsDto.userId,
+      user: { id: createAccountsDto.userId },
       active: createAccountsDto.active,
       code,
     });
@@ -66,16 +72,16 @@ export class AccountsService {
     return account;
   }
 
-  async changeStatus(id: string, updateAccountsDto: UpdateAccountsDto) {
-    const account = await this.accountsRepository.preload({
-      ...updateAccountsDto,
-      id,
-    });
-    if (!account) {
-      throw new NotFoundException(`User with id ${id} not found`);
-    }
-    return this.accountsRepository.save(account);
-  }
+  // async changeStatus(id: string, updateAccountsDto: UpdateAccountsDto) {
+  //   const account = await this.accountsRepository.preload({
+  //     ...updateAccountsDto,
+  //     id,
+  //   });
+  //   if (!account) {
+  //     throw new NotFoundException(`User with id ${id} not found`);
+  //   }
+  //   return this.accountsRepository.save(account);
+  // }
 
   async deposit(code: string, depositDto: DepositDto) {
     const account = await this.findOne(code);

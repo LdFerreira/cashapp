@@ -4,4 +4,7 @@ export interface JwtPayload {
   role?: {
     name: string;
   };
+  account?: {
+    code: string;
+  };
 }
