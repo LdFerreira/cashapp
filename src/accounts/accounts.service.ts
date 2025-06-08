@@ -251,7 +251,6 @@ export class AccountsService {
       .orderBy('transaction.createdAt', 'DESC')
       .getMany();
 
-
     return {
       accountId: account.id,
       currentBalance: account.balance,
@@ -264,7 +263,79 @@ export class AccountsService {
         after_balance: tx.after_balance,
         date: subHours(tx.createdAt, 3),
         to_account_id: tx.to_account_id ?? null,
+        from_account_id: tx.from_account_id ?? null,
       })),
     };
+  }
+
+  async reverseTransaction(transactionId: string) {
+    const transaction = await this.transactionsRepository.findOne({
+      where: { id: transactionId, type: TransactionType.TRANSFER },
+    });
+
+    if (!transaction) {
+      throw new NotFoundException(
+        `Transaction with id ${transactionId} not found or not a transfer transaction`,
+      );
+    }
+    const { from_account_id, to_account_id, amount } = transaction;
+
+    const receiverAccount = await this.accountsRepository.findOne({
+      where: { id: to_account_id },
+    });
+    if (!receiverAccount) {
+      throw new NotFoundException(`Account with id ${to_account_id} not found`);
+    }
+    const receiverAccountOriginalBalance = receiverAccount.balance;
+
+    const {
+      newBalance: receiverNewBalance,
+      updatedAccount: receiverAccountUpdated,
+    } = await this.processBalanceUpdate(
+      receiverAccount,
+      parseFloat(String(amount)),
+      'subtract',
+    );
+
+    await this.createTransactionRecord({
+      type: TransactionType.REVERSAL,
+      amount: amount,
+      beforeBalance: parseFloat(receiverAccountOriginalBalance),
+      afterBalance: parseFloat(receiverNewBalance),
+      account: receiverAccountUpdated,
+      toAccountId: from_account_id,
+      fromAccountId: to_account_id,
+    });
+
+    const fromAccount = await this.accountsRepository.findOne({
+      where: { id: from_account_id },
+    });
+    if (!fromAccount) {
+      throw new NotFoundException(
+        `Account with id ${from_account_id} not found`,
+      );
+    }
+    const originalBalance = fromAccount.balance;
+
+    const { newBalance, updatedAccount } = await this.processBalanceUpdate(
+      fromAccount,
+      parseFloat(String(amount)),
+      'add',
+    );
+
+    await this.createTransactionRecord({
+      type: TransactionType.REVERSAL,
+      amount: amount,
+      beforeBalance: parseFloat(originalBalance),
+      afterBalance: parseFloat(newBalance),
+      account: updatedAccount,
+      toAccountId: from_account_id,
+      fromAccountId: to_account_id,
+    });
+
+    transaction.type = TransactionType.REVERSED;
+    await this.transactionsRepository.save(transaction);
+
+    return transaction;
   }
 }

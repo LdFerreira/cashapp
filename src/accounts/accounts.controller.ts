@@ -59,4 +59,9 @@ export class AccountsController {
   ) {
     return this.accountService.getAccountStatement(code, filters);
   }
+
+  @Post('reverse/:transactionId')
+  reverseTransaction(@Param('transactionId') transactionId: string) {
+    return this.accountService.reverseTransaction(transactionId);
+  }
 }
