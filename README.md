@@ -85,7 +85,7 @@ CashApp é uma API RESTful robusta para gerenciamento de contas e transações f
 
 ```bash
 # Clonar o repositório
-$ git clone <repository-url>
+$ git clone [<repository-url>](https://github.com/LdFerreira/cashapp)
 
 # Navegar para o diretório do projeto
 $ cd cashapp
