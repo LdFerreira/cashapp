@@ -18,15 +18,56 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtPayload } from '../auth/jwt-payload.interface';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+@ApiTags('roles')
+@ApiBearerAuth()
 @Controller('roles')
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
+
+  @ApiOperation({ summary: 'Get all roles' })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns all roles',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - requires admin role',
+  })
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   findAll() {
     return this.rolesService.findAll();
   }
+
+  @ApiOperation({ summary: 'Get a role by ID' })
+  @ApiParam({
+    name: 'id',
+    description: 'The ID of the role',
+    type: 'string',
+    format: 'uuid',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Returns the role',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - requires admin role',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Role not found',
+  })
   @Get(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
@@ -39,6 +80,19 @@ export class RolesController {
     return this.rolesService.findOne(id);
   }
 
+  @ApiOperation({ summary: 'Create a new role' })
+  @ApiResponse({
+    status: 201,
+    description: 'The role has been successfully created',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - requires admin role',
+  })
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
@@ -46,6 +100,29 @@ export class RolesController {
     return this.rolesService.create(createRoleDTO);
   }
 
+  @ApiOperation({ summary: 'Update a role' })
+  @ApiParam({
+    name: 'id',
+    description: 'The ID of the role',
+    type: 'string',
+    format: 'uuid',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'The role has been successfully updated',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - requires admin role',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Role not found',
+  })
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
@@ -53,6 +130,35 @@ export class RolesController {
     return this.rolesService.update(id, updateRoleDTO);
   }
 
+  @ApiOperation({ summary: 'Assign a role to a user' })
+  @ApiParam({
+    name: 'id',
+    description: 'The ID of the role',
+    type: 'string',
+    format: 'uuid',
+  })
+  @ApiParam({
+    name: 'userId',
+    description: 'The ID of the user',
+    type: 'string',
+    format: 'uuid',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'The role has been successfully assigned to the user',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Forbidden - requires admin role or cannot change own role',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Role or user not found',
+  })
   @Patch(':id/:userId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
