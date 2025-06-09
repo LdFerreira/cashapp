@@ -1,5 +1,9 @@
 # CashApp - API de Banco Digital
+# 🚀 CashApp - API de Banco Digital
 
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![Build](https://img.shields.io/badge/build-passing-brightgreen)]()
+[![NestJS](https://img.shields.io/badge/NestJS-API-red)](https://nestjs.com/)
 <p align="center">
   <img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" />
 </p>
@@ -8,7 +12,13 @@
 
 ## Visão Geral
 
-CashApp é uma API bancária robusta que fornece um conjunto abrangente de recursos para operações bancárias digitais. Construída com NestJS e TypeORM, oferece gerenciamento seguro de contas, processamento de transações e rastreamento financeiro detalhado.
+CashApp é uma API RESTful robusta para gerenciamento de contas e transações financeiras. Construída com **NestJS**, **TypeORM** e **PostgreSQL**, fornece:
+
+- 🧑‍💼 Autenticação e autorização com JWT e papéis (Admin / User)
+- 🏦 Criação e gestão de contas bancárias
+- 💸 Transações (depósito, saque, transferência e estorno)
+- 📄 Geração de extratos com filtros
+- 🔐 Segurança integrada e documentação Swagger
 
 ## Recursos
 
@@ -23,7 +33,8 @@ CashApp é uma API bancária robusta que fornece um conjunto abrangente de recur
 - **Segurança**: Autenticação baseada em JWT e autorização baseada em funções
 - **Documentação da API**: Documentação abrangente com Swagger
 
-## Endpoints da API
+## 📌 Endpoints Disponíveis
+
 
 ### Autenticação
 - `POST /auth/login` - Autenticar um usuário e obter token de acesso
@@ -63,10 +74,12 @@ CashApp é uma API bancária robusta que fornece um conjunto abrangente de recur
 
 ## Configuração do Projeto
 
-### Pré-requisitos
-- Node.js (v14 ou superior)
-- Gerenciador de pacotes Yarn
-- Banco de dados PostgreSQL (ou outro suportado pelo TypeORM)
+## ⚙️ Pré-requisitos
+
+- [Node.js](https://nodejs.org/) v14+
+- [Yarn](https://classic.yarnpkg.com/)
+- [PostgreSQL](https://www.postgresql.org/) (ou outro DB suportado pelo TypeORM)
+
 
 ### Instalação
 
@@ -99,12 +112,16 @@ $ yarn run start:dev
 $ yarn run start:prod
 ```
 ## ⚠ Importante
-Para realizar as operacoes de admin é importante executar o comando abaixo para popular o banco
-```bash
-# Modo de desenvolvimento
-$ yarn seed
 
+Para realizar as operacoes de admin é importante executar o comando abaixo para popular o banco
 ```
+$ yarn seed
+```
+⚠️ Isso cria um usuário:
+
+email: admin@admin.com
+
+senha: admin123
 ## Suporte Docker
 
 A aplicação inclui suporte Docker para fácil implantação:
