@@ -1,4 +1,3 @@
-// seed.ts
 import { NestFactory } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
