@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Param,
-  Patch,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Get, Param, Patch, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update.user.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -37,14 +30,4 @@ export class UsersController {
   update(@Param('id') id: string, @Body() updateUserDTO: UpdateUserDto) {
     return this.usersService.update(id, updateUserDTO);
   }
-
-  // @Delete(':id')
-  // @UseGuards(JwtAuthGuard)
-  // remove(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
-  //   // Check if the user is trying to delete their own data
-  //   if (id !== user.id) {
-  //     throw new ForbiddenException('You can only delete your own user data');
-  //   }
-  //   return this.usersService.remove(id);
-  // }
 }

@@ -27,5 +27,5 @@ export class RegisterDto {
 
   @IsString()
   @IsOptional()
-  role: Roles;
+  role?: Roles;
 }

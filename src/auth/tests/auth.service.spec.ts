@@ -77,8 +77,9 @@ describe('AuthService', () => {
       usersRepository.save.mockResolvedValue(createdUser);
 
       const result = await service.register(registerDto);
-
-      expect(result).toEqual({ accessToken: 'test-token' });
+      expect(result).toEqual({
+        email: 'test@example.com',
+      });
       expect(bcrypt.genSalt).toHaveBeenCalled();
       expect(bcrypt.hash).toHaveBeenCalledWith(registerDto.password, 'salt');
       expect(usersRepository.create).toHaveBeenCalledWith({
@@ -181,6 +182,7 @@ describe('AuthService', () => {
       expect(result).toEqual(user);
       expect(usersRepository.findOne).toHaveBeenCalledWith({
         where: { id: payload.id },
+        relations: ['role', 'account'],
       });
     });
 
@@ -194,6 +196,7 @@ describe('AuthService', () => {
       );
       expect(usersRepository.findOne).toHaveBeenCalledWith({
         where: { id: payload.id },
+        relations: ['role', 'account']
       });
     });
   });

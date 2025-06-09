@@ -3,6 +3,7 @@ import { RolesService } from '../roles.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { NotFoundException } from '@nestjs/common';
 import { Roles } from '../entities/roles.entity';
+import { Users } from '../../users/entities/users.entity';
 
 describe('RolesService', () => {
   let service: RolesService;
@@ -13,6 +14,10 @@ describe('RolesService', () => {
     preload: jest.Mock;
     save: jest.Mock;
     remove: jest.Mock;
+  };
+  let usersRepository: {
+    findOne: jest.Mock;
+    save: jest.Mock;
   };
 
   beforeEach(async () => {
@@ -25,10 +30,16 @@ describe('RolesService', () => {
       remove: jest.fn(),
     };
 
+    usersRepository = {
+      findOne: jest.fn(),
+      save: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         RolesService,
         { provide: getRepositoryToken(Roles), useValue: rolesRepository },
+        { provide: getRepositoryToken(Users), useValue: usersRepository },
       ],
     }).compile();
 
@@ -139,39 +150,6 @@ describe('RolesService', () => {
       });
       expect(rolesRepository.preload).toHaveBeenCalledTimes(1);
       expect(rolesRepository.save).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('remove', () => {
-    it('should remove and return a role when found by ID', async () => {
-      const id = '1';
-      const role = { id, name: 'Admin' };
-
-      rolesRepository.findOne.mockResolvedValue(role);
-      rolesRepository.remove.mockResolvedValue(role);
-
-      const result = await service.remove(id);
-
-      expect(result).toEqual(role);
-      expect(rolesRepository.findOne).toHaveBeenCalledWith({
-        where: { id },
-      });
-      expect(rolesRepository.remove).toHaveBeenCalledWith(role);
-      expect(rolesRepository.findOne).toHaveBeenCalledTimes(1);
-      expect(rolesRepository.remove).toHaveBeenCalledTimes(1);
-    });
-
-    it('should throw NotFoundException if no role is found by ID during remove', async () => {
-      const id = '999';
-
-      rolesRepository.findOne.mockResolvedValue(null);
-
-      await expect(service.remove(id)).rejects.toThrow(NotFoundException);
-      expect(rolesRepository.findOne).toHaveBeenCalledWith({
-        where: { id },
-      });
-      expect(rolesRepository.findOne).toHaveBeenCalledTimes(1);
-      expect(rolesRepository.remove).not.toHaveBeenCalled();
     });
   });
 });

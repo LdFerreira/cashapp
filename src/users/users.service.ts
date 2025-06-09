@@ -4,8 +4,6 @@ import { CreateUserDTO } from './dto/create.user.dto';
 import { UpdateUserDto } from './dto/update.user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { plainToInstance } from 'class-transformer';
-import { UserDTO } from './dto/list.user.dto';
 
 @Injectable()
 export class UsersService {
@@ -18,10 +16,7 @@ export class UsersService {
     const users = await this.usersRepository.find({
       relations: ['role'],
     });
-    console.log(`users`, users);
-    return plainToInstance(UserDTO, users, {
-      excludeExtraneousValues: true,
-    });
+    return users;
   }
 
   async findOne(id: string) {

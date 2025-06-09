@@ -53,13 +53,6 @@ export class AccountsController {
     return this.accountService.findOne(code);
   }
 
-  // @Put(':id')
-  // remove(
-  //   @Param('id') id: string,
-  //   @Body() updateAccountsDto: UpdateAccountsDto,
-  // ) {
-  //   return this.accountService.changeStatus(id, updateAccountsDto);
-  // }
 
   @Post('deposit')
   @UseGuards(JwtAuthGuard)

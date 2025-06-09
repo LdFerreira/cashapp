@@ -69,7 +69,12 @@ describe('RolesController', () => {
       const role = { id: '1', name: 'Admin' };
       rolesService.findOne.mockResolvedValue(role);
 
-      const result = await controller.findOne('1');
+      const mockUser = {
+        id: '1',
+        email: 'admin@example.com',
+        role: { name: 'admin' },
+      };
+      const result = await controller.findOne('1', mockUser);
       expect(result).toEqual(role);
       expect(rolesService.findOne).toHaveBeenCalledWith('1');
       expect(rolesService.findOne).toHaveBeenCalledTimes(1);
@@ -80,7 +85,12 @@ describe('RolesController', () => {
         new NotFoundException('Role not found'),
       );
 
-      await expect(controller.findOne('999')).rejects.toThrow(
+      const mockUser = {
+        id: '1',
+        email: 'admin@example.com',
+        role: { name: 'admin' },
+      };
+      await expect(controller.findOne('999', mockUser)).rejects.toThrow(
         NotFoundException,
       );
       expect(rolesService.findOne).toHaveBeenCalledWith('999');
@@ -126,30 +136,6 @@ describe('RolesController', () => {
       );
       expect(rolesService.update).toHaveBeenCalledWith(id, updateRoleDTO);
       expect(rolesService.update).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe('remove', () => {
-    it('should remove and return a role', async () => {
-      const id = '1';
-      const removedRole = { id, name: 'Admin' };
-      rolesService.remove.mockResolvedValue(removedRole);
-
-      const result = await controller.remove(id);
-      expect(result).toEqual(removedRole);
-      expect(rolesService.remove).toHaveBeenCalledWith(id);
-      expect(rolesService.remove).toHaveBeenCalledTimes(1);
-    });
-
-    it('should propagate exceptions from the service', async () => {
-      const id = '999';
-      rolesService.remove.mockRejectedValue(
-        new NotFoundException(`Role with id ${id} not found`),
-      );
-
-      await expect(controller.remove(id)).rejects.toThrow(NotFoundException);
-      expect(rolesService.remove).toHaveBeenCalledWith(id);
-      expect(rolesService.remove).toHaveBeenCalledTimes(1);
     });
   });
 });

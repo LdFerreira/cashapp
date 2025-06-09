@@ -106,6 +106,12 @@ export class AccountsService {
   async withdraw(code: string, withdrawDto: WithdrawDto) {
     const account = await this.findOne(code);
     const originalBalance = account.balance;
+
+    const currentBalance = parseFloat(account.balance);
+    if (currentBalance < withdrawDto.value) {
+      throw new NotFoundException('Insufficient funds');
+    }
+
     const { newBalance, updatedAccount } = await this.processBalanceUpdate(
       account,
       withdrawDto.value,
