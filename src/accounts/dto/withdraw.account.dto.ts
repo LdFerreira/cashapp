@@ -11,6 +11,6 @@ export class WithdrawDto {
   })
   @Type(() => Number)
   @IsNumber()
-  @Min(0.01, { message: 'O valor do saque deve ser maior que zero.' })
+  @Min(0.01, { message: 'Value must be greater than zero.' })
   value: number;
 }

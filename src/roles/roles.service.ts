@@ -34,6 +34,13 @@ export class RolesService {
   }
 
   async create(createRoleDTO: CreateRoleDTO) {
+    const { name } = createRoleDTO;
+    const nameAlreadyExists = await this.rolesRepository.findOne({
+      where: { name },
+    });
+    if (nameAlreadyExists) {
+      throw new NotFoundException(`Role with name ${name} already exists`);
+    }
     const role = this.rolesRepository.create(createRoleDTO);
     return this.rolesRepository.save(role);
   }

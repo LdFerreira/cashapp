@@ -18,5 +18,5 @@ export class CreateAccountsDto {
   })
   @IsBoolean()
   @IsOptional()
-  readonly active?: boolean;
+  readonly active?: boolean; // Ideia esquecida
 }

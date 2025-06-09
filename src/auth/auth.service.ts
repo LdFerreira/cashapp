@@ -18,7 +18,12 @@ export class AuthService {
 
   async register(registerDto: RegisterDto): Promise<{ email: string }> {
     const { name, email, password, birthdate, role } = registerDto;
-
+    const emailAlreadyExists = await this.usersRepository.findOne({
+      where: { email },
+    });
+    if (emailAlreadyExists) {
+      throw new UnauthorizedException('Email already exists');
+    }
     const saltRounds = 10;
     const salt = await bcrypt.genSalt(saltRounds);
     const hashedPassword = await bcrypt.hash(password, salt);

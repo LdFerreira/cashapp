@@ -19,7 +19,14 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtPayload } from '../auth/jwt-payload.interface';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 
 @ApiTags('accounts')
 @ApiBearerAuth()
@@ -38,7 +45,8 @@ export class AccountsController {
   })
   @ApiResponse({
     status: 403,
-    description: 'Forbidden - requires admin role or cannot create account for self as admin',
+    description:
+      'Forbidden - requires admin role or cannot create account for self as admin',
   })
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -104,8 +112,7 @@ export class AccountsController {
     return this.accountService.findOne(code);
   }
 
-
-  @ApiOperation({ summary: 'Deposit money into the user\'s account' })
+  @ApiOperation({ summary: "Deposit money into the user's account" })
   @ApiResponse({
     status: 200,
     description: 'The deposit has been successfully processed',
@@ -128,7 +135,7 @@ export class AccountsController {
     return this.accountService.deposit(user.account?.code, depositDto);
   }
 
-  @ApiOperation({ summary: 'Withdraw money from the user\'s account' })
+  @ApiOperation({ summary: "Withdraw money from the user's account" })
   @ApiResponse({
     status: 200,
     description: 'The withdrawal has been successfully processed',
@@ -175,7 +182,8 @@ export class AccountsController {
   })
   @ApiResponse({
     status: 400,
-    description: 'Bad Request - insufficient funds or invalid recipient account',
+    description:
+      'Bad Request - insufficient funds or invalid recipient account',
   })
   @ApiResponse({
     status: 404,
